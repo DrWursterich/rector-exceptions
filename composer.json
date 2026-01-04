@@ -5,9 +5,17 @@
         "phpstan/phpstan": "^2.1.33",
         "rector/rector": "^2.3"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^12.5"
+    },
     "autoload": {
         "psr-4": {
             "DrWursterich\\RectorExceptions\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "DrWursterich\\RectorExceptions\\Tests\\": "tests/"
         }
     },
     "authors": [
@@ -15,5 +23,11 @@
             "name": "DrWursterich",
             "email": "31037782+DrWursterich@users.noreply.github.com"
         }
-    ]
+    ],
+    "scripts": {
+        "test": [
+            "@test:phpunit"
+        ],
+        "test:phpunit": "./vendor/bin/phpunit -c phpunit.xml"
+    }
 }

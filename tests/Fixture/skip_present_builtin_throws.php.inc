@@ -4,17 +4,12 @@ declare(strict_types=1);
 
 namespace App;
 
-class Method
+class SkipPresentBuiltinThrows
 {
-    public function method(): void
-    {
-        $this->throwException();
-    }
-
     /**
      * @throws \RuntimeException
      */
-    private function throwException(): void
+    public function someMethod(): void
     {
         throw new \RuntimeException();
     }

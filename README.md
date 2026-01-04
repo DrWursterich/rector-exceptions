@@ -1,3 +1,5 @@
+## rector-exceptions
+
 simple [rector](https://github.com/rector/rector) to add `@throws` doccomments.
 
 ```diff

@@ -33,6 +33,7 @@ final class ThrowsDeclarationMerger
         $phpDocInfo ??= $this->phpDocInfoFactory->createEmpty($node);
         $phpDocInfo->makeMultiLined();
 
+        $hasChanged = false;
         foreach ($exceptions as $exception) {
             foreach ($phpDocInfo->getPhpDocNode()->children as $throws) {
                 if (!($throws instanceof PhpDocTagNode)) {
@@ -52,6 +53,11 @@ final class ThrowsDeclarationMerger
                 name: '@throws',
                 value: new ThrowsTagValueNode($exception, ''),
             );
+            $hasChanged = true;
+        }
+
+        if (!$hasChanged) {
+            return null;
         }
 
         $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($node);
