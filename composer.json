@@ -1,0 +1,19 @@
+{
+    "name": "drwursterich/rector-exceptions",
+    "type": "library",
+    "require": {
+        "phpstan/phpstan": "^2.1.33",
+        "rector/rector": "^2.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "DrWursterich\\RectorExceptions\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "DrWursterich",
+            "email": "31037782+DrWursterich@users.noreply.github.com"
+        }
+    ]
+}
