@@ -1,6 +1,8 @@
 {
     "name": "drwursterich/rector-exceptions",
+    "description": "simple rector to add @throws doccomments",
     "type": "library",
+    "license": "Unlicense",
     "require": {
         "phpstan/phpstan": "^2.1.33",
         "rector/rector": "^2.3"
