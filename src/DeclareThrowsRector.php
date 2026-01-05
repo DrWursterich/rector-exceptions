@@ -43,7 +43,6 @@ final class DeclareThrowsRector extends AbstractRector
         $traverser = new NodeTraverser($visitor);
         $traverser->traverse($stmts);
         $exceptions = $visitor->getExceptions();
-        sort($exceptions);
         return $this->throwsDeclarationMerger->addAll($node, $exceptions);
     }
 

@@ -7,7 +7,7 @@ namespace App;
 class UnknownFunction
 {
     /**
-     * @param callable(string): int
+     * @param callable(string): int $callable
      */
     public function someMethod(callable $callable): int
     {

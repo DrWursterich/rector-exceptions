@@ -52,61 +52,22 @@ class ThrowsCollector extends NodeVisitorAbstract
 
     public function collect(Node $node): ?int
     {
-        $throws = null;
-        if ($node instanceof Class_) {
-            return NodeVisitor::DONT_TRAVERSE_CHILDREN;
-        }
-        if ($node instanceof Closure) {
+        if ($node instanceof Class_ || $node instanceof Closure) {
             return NodeVisitor::DONT_TRAVERSE_CHILDREN;
         }
         if ($node instanceof TryCatch) {
-            $exceptions = $this->collectFrom($node->stmts);
-            foreach ($exceptions as $exception) {
-                foreach ($node->catches as $catch) {
-                    foreach ($catch->types as $type) {
-                        if ($this->isCoughtBy($exception, $type)) {
-                            continue 3;
-                        }
-                        $this->exceptions[] = $exception;
-                    }
-                }
-            }
-            $this->exceptions += $this->collectFrom($node->catches);
-            if ($node->finally !== null) {
-                $this->exceptions += $this->collectFrom($node->finally->stmts);
-            }
+            $this->traverseTryCatch($node);
             return NodeVisitor::DONT_TRAVERSE_CHILDREN;
         }
+        $throws = null;
         if ($node instanceof Throw_) {
             $throws = $this->nodeTypeResolver->getType($node->expr);
         } elseif ($node instanceof FuncCall) {
-            $name = $this->nodeNameResolver->getName($node->name);
-            if ($name === null) {
-                return null;
-            }
-            $name = new Name($name);
-            try {
-                $func = $this->reflectionProvider->getFunction($name, $this->scope);
-            } catch (FunctionNotFoundException $exception) {
-                return null;
-            }
-            $throws = $func->getThrowType();
+            $throws = $this->getFuncThrows($node);
         } elseif ($node instanceof MethodCall) {
-            $name = $this->nodeNameResolver->getName($node->name);
-            if ($name === null) {
-                return null;
-            }
-            $class = $this->nodeTypeResolver->getType($node->var);
-            $method = $class->getMethod($name, $this->scope);
-            $throws = $method->getThrowType();
+            $throws = $this->getMethodThrows($node);
         } elseif ($node instanceof StaticCall) {
-            $name = $this->nodeNameResolver->getName($node->name);
-            if ($name === null) {
-                return null;
-            }
-            $class = $this->nodeTypeResolver->getType($node->class);
-            $method = $class->getMethod($name, $this->scope);
-            $throws = $method->getThrowType();
+            $throws = $this->getStaticCallThrows($node);
         }
         if ($throws !== null) {
             $this->addTypes($throws);
@@ -120,6 +81,62 @@ class ThrowsCollector extends NodeVisitorAbstract
     public function getExceptions(): array
     {
         return $this->exceptions;
+    }
+
+    private function traverseTryCatch(TryCatch $node): void
+    {
+        $exceptions = $this->collectFrom($node->stmts);
+        foreach ($exceptions as $exception) {
+            foreach ($node->catches as $catch) {
+                foreach ($catch->types as $type) {
+                    if ($this->isCoughtBy($exception, $type)) {
+                        continue 3;
+                    }
+                    $this->exceptions[] = $exception;
+                }
+            }
+        }
+        $this->exceptions += $this->collectFrom($node->catches);
+        if ($node->finally !== null) {
+            $this->exceptions += $this->collectFrom($node->finally->stmts);
+        }
+    }
+
+    private function getFuncThrows(FuncCall $node): ?Type
+    {
+        $name = $this->nodeNameResolver->getName($node->name);
+        if ($name === null) {
+            return null;
+        }
+        $name = new Name($name);
+        try {
+            $func = $this->reflectionProvider->getFunction($name, $this->scope);
+        } catch (FunctionNotFoundException $exception) {
+            return null;
+        }
+        return $func->getThrowType();
+    }
+
+    private function getMethodThrows(MethodCall $node): ?Type
+    {
+        $name = $this->nodeNameResolver->getName($node->name);
+        if ($name === null) {
+            return null;
+        }
+        $class = $this->nodeTypeResolver->getType($node->var);
+        $method = $class->getMethod($name, $this->scope);
+        return $method->getThrowType();
+    }
+
+    private function getStaticCallThrows(StaticCall $node): ?Type
+    {
+        $name = $this->nodeNameResolver->getName($node->name);
+        if ($name === null) {
+            return null;
+        }
+        $class = $this->nodeTypeResolver->getType($node->class);
+        $method = $class->getMethod($name, $this->scope);
+        return $method->getThrowType();
     }
 
     /**
@@ -155,11 +172,10 @@ class ThrowsCollector extends NodeVisitorAbstract
     private function classNameToIdentifier(
         string $className,
     ): IdentifierTypeNode {
-        if (strpos($className, '\\') !== false) {
-            $short = substr($className, strrpos($className, '\\') + 1);
-            return new IdentifierTypeNode($short);
-        } else {
-            return new FullyQualifiedIdentifierTypeNode($className);
-        }
+        return strpos($className, '\\') !== false
+            ? new IdentifierTypeNode(
+                substr($className, strrpos($className, '\\') + 1),
+            )
+            : new FullyQualifiedIdentifierTypeNode($className);
     }
 }

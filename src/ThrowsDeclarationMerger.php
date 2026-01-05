@@ -60,6 +60,7 @@ final class ThrowsDeclarationMerger
             return null;
         }
 
+        sort($phpDocInfo->getPhpDocNode()->children);
         $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($node);
         return $node;
     }
