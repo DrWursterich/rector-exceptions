@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DrWursterich\RectorExceptions;
 
 use PHPStan\Analyser\Scope;
+use PHPStan\Broker\FunctionNotFoundException;
 use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Type\Type;
@@ -12,11 +13,13 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
 use PhpParser\NodeVisitorAbstract;
+use PhpParser\Node\Expr\Closure;
 use PhpParser\Node\Expr\FuncCall;
 use PhpParser\Node\Expr\MethodCall;
 use PhpParser\Node\Expr\StaticCall;
 use PhpParser\Node\Expr\Throw_;
 use PhpParser\Node\Name;
+use PhpParser\Node\Stmt\Class_;
 use PhpParser\Node\Stmt\TryCatch;
 use Rector\BetterPhpDocParser\ValueObject\Type\FullyQualifiedIdentifierTypeNode;
 use Rector\NodeNameResolver\NodeNameResolver;
@@ -50,6 +53,12 @@ class ThrowsCollector extends NodeVisitorAbstract
     public function collect(Node $node): ?int
     {
         $throws = null;
+        if ($node instanceof Class_) {
+            return NodeVisitor::DONT_TRAVERSE_CHILDREN;
+        }
+        if ($node instanceof Closure) {
+            return NodeVisitor::DONT_TRAVERSE_CHILDREN;
+        }
         if ($node instanceof TryCatch) {
             $exceptions = $this->collectFrom($node->stmts);
             foreach ($exceptions as $exception) {
@@ -76,7 +85,11 @@ class ThrowsCollector extends NodeVisitorAbstract
                 return null;
             }
             $name = new Name($name);
-            $func = $this->reflectionProvider->getFunction($name, $this->scope);
+            try {
+                $func = $this->reflectionProvider->getFunction($name, $this->scope);
+            } catch (FunctionNotFoundException $exception) {
+                return null;
+            }
             $throws = $func->getThrowType();
         } elseif ($node instanceof MethodCall) {
             $name = $this->nodeNameResolver->getName($node->name);
