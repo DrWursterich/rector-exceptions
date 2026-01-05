@@ -4,9 +4,10 @@ declare (strict_types=1);
 
 namespace DrWursterich\RectorExceptions;
 
-use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
+use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocChildNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocTagNode;
 use PHPStan\PhpDocParser\Ast\PhpDoc\ThrowsTagValueNode;
+use PHPStan\PhpDocParser\Ast\Type\IdentifierTypeNode;
 use PhpParser\Node;
 use Rector\BetterPhpDocParser\PhpDocInfo\PhpDocInfoFactory;
 use Rector\BetterPhpDocParser\PhpDocManipulator\PhpDocTagRemover;
@@ -60,7 +61,11 @@ final class ThrowsDeclarationMerger
             return null;
         }
 
-        sort($phpDocInfo->getPhpDocNode()->children);
+        usort(
+            $phpDocInfo->getPhpDocNode()->children,
+            fn (PhpDocChildNode $a, PhpDocChildNode $b)
+                => $a->value->type->__toString() <=> $b->value->type->__toString(),
+        );
         $this->docBlockUpdater->updateRefactoredNodeWithPhpDocInfo($node);
         return $node;
     }

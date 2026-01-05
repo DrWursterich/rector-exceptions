@@ -102,6 +102,29 @@ class ThrowsCollector extends NodeVisitorAbstract
         }
     }
 
+    /**
+     * @param Node[] $stmts
+     * @return list<IdentifierTypeNode>
+     */
+    private function collectFrom(array $stmts): array
+    {
+        $visitor = new ThrowsCollector(
+            $this->nodeTypeResolver,
+            $this->nodeNameResolver,
+            $this->reflectionProvider,
+            $this->scope,
+        );
+        $traverser = new NodeTraverser($visitor);
+        $traverser->traverse($stmts);
+        return $visitor->getExceptions();
+    }
+
+    private function isCoughtBy(IdentifierTypeNode $exception, Name $type): bool
+    {
+        $cought = $this->classNameToIdentifier($type->__toString());
+        return is_a($exception->__toString(), $cought->__toString(), true);
+    }
+
     private function getFuncThrows(FuncCall $node): ?Type
     {
         $name = $this->nodeNameResolver->getName($node->name);
@@ -139,29 +162,6 @@ class ThrowsCollector extends NodeVisitorAbstract
         return $method->getThrowType();
     }
 
-    /**
-     * @param Node[] $stmts
-     * @return list<IdentifierTypeNode>
-     */
-    private function collectFrom(array $stmts): array
-    {
-        $visitor = new ThrowsCollector(
-            $this->nodeTypeResolver,
-            $this->nodeNameResolver,
-            $this->reflectionProvider,
-            $this->scope,
-        );
-        $traverser = new NodeTraverser($visitor);
-        $traverser->traverse($stmts);
-        return $visitor->getExceptions();
-    }
-
-    private function isCoughtBy(IdentifierTypeNode $exception, Name $type): bool
-    {
-        $cought = $this->classNameToIdentifier($type->__toString());
-        return is_a($exception->__toString(), $cought->__toString(), true);
-    }
-
     private function addTypes(Type $type): void
     {
         foreach ($type->getObjectClassNames() as $name) {
@@ -172,10 +172,9 @@ class ThrowsCollector extends NodeVisitorAbstract
     private function classNameToIdentifier(
         string $className,
     ): IdentifierTypeNode {
-        return strpos($className, '\\') !== false
-            ? new IdentifierTypeNode(
-                substr($className, strrpos($className, '\\') + 1),
-            )
+        $slash = strrpos($className, '\\');
+        return is_int($slash)
+            ? new IdentifierTypeNode(substr($className, $slash + 1))
             : new FullyQualifiedIdentifierTypeNode($className);
     }
 }
